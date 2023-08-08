@@ -1,0 +1,94 @@
+from microbit import*
+import random
+import music
+
+notes = ["E4:4", "D#:8", "E4:8", "D#4:8", "E4:4", "D#4:8","E4:8","D#4:8", "E4:4", "B3:8", "C4:4"]
+
+music.play(notes, wait=False) # plays music during welcome message and countdown
+
+# scrolls welcome message and starts count down
+display.scroll("READY")
+display.show("3")
+sleep(1000)
+display.show("2")
+sleep(1000)
+display.show("1")
+sleep(1000)
+display.clear() # clears welcome message
+
+# Game constants
+frames_per_wall_shift = 20   # number of frames between each time a wall moves a pixel to left
+frames_per_new_wall = 100    # number of frames between each new wall
+frames_per_score = 50        # number of frames between score rising by 1
+
+# Global variables
+y = 50                       # bird's intial position
+speed = 0                    # bird's intial speed
+score = 0                    # intial score
+frame = 0
+
+# Make an image that represents a pipe to dodge
+def make_pipe():
+    i = Image("00007:00007:00007:00007:00007")
+    gap = random.randint(0,3)    # random wall position
+    i.set_pixel(4, gap, 0)       # blast a hole in the pipe
+    i.set_pixel(4, gap+1, 0)
+    return i
+
+# create first pipe
+i = make_pipe()
+
+#Game loop
+while True:
+    
+    frame = frame + 1
+
+    # show pipe
+    display.show(i)
+
+    # flap if button a was pressed
+    if button_a.was_pressed():
+        speed = -8
+
+    # show score if button b was pressed
+    if button_b.was_pressed():
+        display.scroll("Score:" + str(score))
+
+    # accelerate down to terminal velocity
+    speed = speed + 1
+    if speed > 2:
+        speed = 2
+
+    # move bird, but not off the edge
+    y = y + speed
+    if y > 99:
+        y = 99
+    if y < 0:
+        y = 0
+
+    # draw bird
+    led_y = int(y / 20)
+    display.set_pixel(1, led_y, 9)
+
+    # check for collision
+    if i.get_pixel(1, led_y) != 0:
+        display.show(Image.SAD)
+        sleep(500)
+        display.scroll("Score: " + str(score))
+        break
+    
+    # move wall left
+    if(frame % frames_per_wall_shift == 0):
+        i = i.shift_left(1)
+    
+    # create new wall
+    if(frame % frames_per_new_wall == 0):
+        i = make_pipe()
+        
+    # increase score
+    if(frame % frames_per_score == 0):
+        score = score + 1
+    
+    # wait 20ms
+    sleep(20)   
+        
